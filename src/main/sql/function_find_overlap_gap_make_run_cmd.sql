@@ -1,7 +1,9 @@
 
 
+-- OLD FUNCTION NOT USED
 DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(table_to_analyze_ varchar, table_name_result_prefix_ varchar);
 
+-- OLD FUNCTION NOT USED
 DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
@@ -9,11 +11,20 @@ srid_ int, -- the srid for the given geo column on the table analyze
 table_name_result_prefix_ varchar -- This is the prefix used for the result tables
 );
 
+DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(
+table_to_analyze_ varchar, -- The table to analyze 
+geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
+srid_ int, -- the srid for the given geo column on the table analyze
+table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_rows_in_each_cell_ int -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
+);
+
 CREATE OR REPLACE FUNCTION find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
-table_name_result_prefix_ varchar -- This is the prefix used for the result tables
+table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_rows_in_each_cell_ int DEFAULT 5000 -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
 ) RETURNS SETOF text 
 AS $$DECLARE
 	command_string text;
@@ -27,9 +38,6 @@ AS $$DECLARE
 	
 	-- the number of cells created in the grid
 	num_cells int;
-
-
-	max_rows_in_each_cell int = 5000; -- this is the max number rows that intersects with box before it's split into 4 new boxes 
 
 	overlapgap_overlap varchar = table_name_result_prefix_ || '_overlap'; -- The schema.table name for the overlap/intersects found in each cell 
 	overlapgap_gap varchar = table_name_result_prefix_ || '_gap'; -- The schema.table name for the gaps/holes found in each cell 
@@ -47,7 +55,7 @@ BEGIN
 	quote_literal(table_to_analyze_),
 	quote_literal(geo_collumn_name_),
 	srid_,
-	max_rows_in_each_cell,
+	max_rows_in_each_cell_,
 	quote_literal(overlapgap_overlap),
 	quote_literal(overlapgap_gap),
 	quote_literal(overlapgap_grid),
