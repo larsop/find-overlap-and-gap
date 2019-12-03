@@ -20,9 +20,6 @@ SET default_tablespace = '';
 
 SET default_with_oids = false;
 
---
--- Name: overlap_gap_input_t1; Type: TABLE; Schema: test_data; Owner: lop
---
 
 CREATE TABLE test_data.overlap_gap_input_t1 (
     c1 integer,
@@ -32,10 +29,8 @@ CREATE TABLE test_data.overlap_gap_input_t1 (
 );
 
 
-ALTER TABLE test_data.overlap_gap_input_t1 OWNER TO lop;
-
 --
--- Data for Name: overlap_gap_input_t1; Type: TABLE DATA; Schema: test_data; Owner: lop
+-- Data for Name: overlap_gap_input_t1; Type: TABLE DATA; Schema: test_data; 
 --
 
 COPY test_data.overlap_gap_input_t1 (c1, c2, c3, geom) FROM stdin;
