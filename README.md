@@ -13,7 +13,10 @@ For the table we need the following information as input
 * geometry column name (could have be computed in the code)
 * the srid og the geometry column (could have be computed in the code)
 
-## Example : Here is a example we use the file https://github.com/larsop/find-overlap-and-gap/blob/master/src/test/sql/regress/overlap_gap_input_t1.sql
+## Example : Here is a example we use the file 
+
+![Input file](https://github.com/larsop/find-overlap-and-gap/blob/master/src/test/sql/regress/overlap_gap_input_t1_res_gap.png)
+found src/test/sql/regress/overlap_gap_input_t1.sql 
 
 First we run a sql command with the name of the input table, geometry column name and srid. The final parameter is prefix for the result tables.
 
