@@ -5,9 +5,7 @@ This code now depends on https://www.gnu.org/software/parallel/ to run (This sho
 
 The basic idea is that you call this function and with a table name as input and a table name prefix for result tables. The result will then different tables that show overlaps, gaps and the boundary for the input table.  
 
-[![Build Status](https://secure.travis-ci.org/NibioOpenSource/find-overlap-and-gap.png)]
-(http://travis-ci.org/larsop/find-overlap-and-gap)
-
+[![Build Status](https://travis-ci.org/larsop/find-overlap-and-gap.svg?branch=master)](https://travis-ci.org/larsop/find-overlap-and-gap)
 
 # How to use :
 For the table we need the following information as input 
@@ -20,7 +18,7 @@ For the table we need the following information as input
 First we run a sql command with the name of the input table, geometry column name and srid. The final parameter is prefix for the result tables.
 
 The command creates a set of sql commands in the file /tmp/run_cmd.sql.
-Then we use gnu to run this commands in paralell. In this case we use 4 threads in parallel. 
+Then we use gnu parallel to run this commands in 4. parallel threads. 
 <pre><code>
 psql testdb -c"\! psql -t -q -o /tmp/run_cmd.sql testdb -c\"SELECT find_overlap_gap_make_run_cmd('sl_lop.overlap_gap_input_t1','geom',4258,'sl_lop.overlap_gap_input_t1_res',50);\"; parallel -j 4  psql testdb -c :::: /tmp/run_cmd.sql" 2>> /tmp/analyze.log;
 </pre></code>
