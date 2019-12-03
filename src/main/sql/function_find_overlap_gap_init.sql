@@ -2,16 +2,6 @@
 -- this is internal helper function
 -- this is a function that creates unlogged tables and the the grid neeed when later checking this table for overlap and gaps. 
  
-DROP FUNCTION IF EXISTS find_overlap_gap_init(table_to_analyze_ varchar, table_name_result_ varchar);
-
-DROP FUNCTION IF EXISTS find_overlap_gap_init(
-table_to_analyze_ varchar, -- The schema.table name with polygons to analyze for gaps and intersects
-overlapgap_overlap_ varchar, -- The schema.table name for the overlap/intersects found in each cell 
-overlapgap_gap_ varchar, -- The schema.table name for the gaps/holes found in each cell 
-overlapgap_grid_ varchar, -- The schema.table name of the grid that will be created and used to break data up in to managle pieces
-overlapgap_boundery_ varchar -- The schema.table name the outer boundery of the data found in each cell 
-);
-
 DROP FUNCTION IF EXISTS find_overlap_gap_init(
 table_to_analyze_ varchar, -- The schema.table name with polygons to analyze for gaps and intersects
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	

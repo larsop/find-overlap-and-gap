@@ -1,16 +1,12 @@
 
---Funksjon som data fra   
--- org_ar5.ar5_22_flate og  org_ar5.ar5_23_flate  org_ar5.ar5_25_flate
--- into org_ar5.ar5_flate
-
-DROP FUNCTION IF EXISTS find_overlap_gap_single_cell(table_to_analyze_ varchar, table_name_result_prefix_ varchar,this_list_id int,num_cells int);
 
 DROP FUNCTION IF EXISTS find_overlap_gap_single_cell(
-	table_to_analyze_ varchar, -- The table to analyze 
-	geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
-	srid_ int, -- the srid for the given geo column on the table analyze
-	table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
-	this_list_id int, num_cells int);
+ 	table_to_analyze_ varchar, -- The table to analyze 
+ 	geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
+ 	srid_ int, -- the srid for the given geo column on the table analyze
+ 	table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+	this_list_id int, num_cells int
+);
 
 CREATE OR REPLACE FUNCTION find_overlap_gap_single_cell(
 		table_to_analyze_ varchar, -- The table to analyze 

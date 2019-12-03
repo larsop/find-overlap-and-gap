@@ -1,16 +1,5 @@
 
 
--- OLD FUNCTION NOT USED
-DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(table_to_analyze_ varchar, table_name_result_prefix_ varchar);
-
--- OLD FUNCTION NOT USED
-DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(
-table_to_analyze_ varchar, -- The table to analyze 
-geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
-srid_ int, -- the srid for the given geo column on the table analyze
-table_name_result_prefix_ varchar -- This is the prefix used for the result tables
-);
-
 DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
@@ -97,6 +86,7 @@ LANGUAGE plpgsql;
 GRANT EXECUTE on FUNCTION find_overlap_gap_make_run_cmd(table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
-table_name_result_prefix_ varchar -- This is the prefix used for the result tables
+table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_rows_in_each_cell_ int
 ) TO public;
 
