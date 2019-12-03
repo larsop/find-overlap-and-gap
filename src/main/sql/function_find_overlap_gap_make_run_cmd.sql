@@ -39,7 +39,6 @@ BEGIN
 	--select * from geometry_columns;
 	
 	--Generate command to create grid
-	--'SELECT find_overlap_gap_init('sl_lop.sk_grl_flate','geo',4258,10,'overlapgap_overlap','overlapgap_gap','overlapgap_grid','overlapgap_boundery')";
 	command_string := FORMAT('SELECT find_overlap_gap_init(%s,%s,%s,%s,%s,%s,%s,%s)',
 	quote_literal(table_to_analyze_),
 	quote_literal(geo_collumn_name_),
