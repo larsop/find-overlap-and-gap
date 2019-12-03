@@ -5,6 +5,10 @@ This code now depends on https://www.gnu.org/software/parallel/ to run (This sho
 
 The basic idea is that you call this function and with a table name as input and a table name prefix for result tables. The result will then different tables that show overlaps, gaps and the boundary for the input table.  
 
+[![Build Status](https://secure.travis-ci.org/NibioOpenSource/find-overlap-and-gap.png)]
+(http://travis-ci.org/larsop/find-overlap-and-gap)
+
+
 # How to use :
 For the table we need the following information as input 
 * table name
