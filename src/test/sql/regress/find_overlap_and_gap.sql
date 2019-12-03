@@ -9,7 +9,7 @@ SELECT '1', count(*) from test_data.overlap_gap_input_t1;
 SELECT find_overlap_gap_make_run_cmd('test_data.overlap_gap_input_t1','geom',4258,'test_data.overlap_gap_input_t1_res',50);
 
 -- Run with GNU parallel 
-\! parallel -j 4  psql postgis_reg  -c :::: /tmp/run_cmd.sql > /tmp/run_cmd_result.log
+\! parallel -j 4  psql nibio_reg  -c :::: /tmp/run_cmd.sql > /tmp/run_cmd_result.log
 \o
 
 -- Check the result

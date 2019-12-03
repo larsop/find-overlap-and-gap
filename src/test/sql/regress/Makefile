@@ -1,7 +1,7 @@
 POSTGIS_SCRIPT_DIR ?=/usr/share/postgresql/11/contrib/postgis-2.5
 
 check: loader 00-regress
-	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
+	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) find_overlap_and_gap
 
 loader:
 #	find / -name shp2pgsql 2>/dev/null # debug 
