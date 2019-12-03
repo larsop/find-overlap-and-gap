@@ -4,10 +4,8 @@
 -- Test that input data are ok
 SELECT '1', count(*) from test_data.overlap_gap_input_t1;
 
--- Pipe output sql to a file to execute later 
-\o /tmp/run_cmd.sql
+-- Pipe output sql to a file to execute later - \o /tmp/run_cmd.sql does not work in Travis
 SELECT find_overlap_gap_make_run_cmd('test_data.overlap_gap_input_t1','geom',4258,'test_data.overlap_gap_input_t1_res',50);
-\o
 
 -- Run with GNU parallel (Does not work on travis. Have to install paralell)
 -- \! parallel -j 4  psql nibio_reg  -c :::: /tmp/run_cmd.sql > /tmp/run_cmd_result.log
