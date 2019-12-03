@@ -17,7 +17,7 @@ For the table we need the following information as input
 ![Parts of the input file](https://github.com/larsop/find-overlap-and-gap/blob/master/src/test/sql/regress/overlap_gap_input_t1.png)
 found src/test/sql/regress/overlap_gap_input_t1.sql 
 
-First we run a sql command with the name of the input table, geometry column name and srid. The final parameter is prefix for the result tables.
+## First we run a sql command with the name of the input table, geometry column name and srid. The final parameter is prefix for the result tables.
 
 The command creates a set of sql commands in the file /tmp/run_cmd.sql.
 Then we use gnu parallel to run this commands in 4. parallel threads. 
@@ -25,7 +25,7 @@ Then we use gnu parallel to run this commands in 4. parallel threads.
 psql testdb -c"\! psql -t -q -o /tmp/run_cmd.sql testdb -c\"SELECT find_overlap_gap_make_run_cmd('sl_lop.overlap_gap_input_t1','geom',4258,'sl_lop.overlap_gap_input_t1_res',50);\"; parallel -j 4  psql testdb -c :::: /tmp/run_cmd.sql" 2>> /tmp/analyze.log;
 </pre></code>
 
-##When done we can check overlaps and gaps
+## When done we can check overlaps and gaps
 
 Check the number of overlaps and overlapping areas in this way. 
 <pre><code>
