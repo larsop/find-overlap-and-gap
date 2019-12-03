@@ -47,7 +47,7 @@ from test_data.overlap_gap_input_t1_res_overlap) as r where ST_Area(geom) >0;
 SELECT 'check gap table',  count(*) num_gap, ROUND(sum(st_area(ST_Transform(geom,32633)))/100000)::integer 
 from (SELECT  (ST_dump(geom)).geom as geom, cell_id from test_data.overlap_gap_input_t1_res_gap) as r;                  
 
-SELECT 'check grid table',  count(*) num_grid, ROUND(sum(st_area(ST_Transform(geom,32633)))/100000)::integer from (SELECT  (ST_dump(geom)).geom as geom, id 
+SELECT 'check grid table',  count(*) num_grid, ROUND(sum(st_area(ST_Transform(geom,32633)))/1000000)::integer from (SELECT  (ST_dump(geom)).geom as geom, id 
 from test_data.overlap_gap_input_t1_res_grid) as r;                  
 
 SELECT 'check boundery table',  count(*) num_boudery, ROUND(sum(st_area(ST_Transform(geom,32633)))/10000)::integer from (SELECT  (ST_dump(geom)).geom as geom, id 

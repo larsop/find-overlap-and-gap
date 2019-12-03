@@ -29,5 +29,5 @@ num_rows_overlap:110, num_rows_gap:38
 num_rows_overlap:217, num_rows_gap:63
 check overlap table|1783|1939202
 check gap table|761|8821125
-check grid table|28|20026921
+check grid table|28|2002692
 check boundery table|70|45310857
