@@ -141,46 +141,6 @@ overlapgap_boundery_ varchar -- The schema.table name the outer boundery of the 
 ) TO public;
 
 
---SELECT find_overlap_gap_init('org_ar5.ar5_flate_degrees_from_utm_35_flate',
---'overlapgap_gap',
---'overlapgap_overlap',
---'overlapgap_grid',
---'overlapgap_boundery');	
-
--- SELECT find_overlap_gap_init('org_ar5.ar5_flate','');
-
---select count(*) as overlapgap_overlap from overlapgap_overlap;
-
---select count(*) as overlapgap_gap from overlapgap_gap;
-
---select cell_id, st_area as over_lap from (select i.*, st_area(st_transform(i.geo,3035)) from overlapgap_overlap i) as r order by st_area desc limit 3;
-
---select cell_id, st_area as st_hole from (select i.*, st_area(st_transform(i.geo,3035)) from overlapgap_gap i) as r order by st_area desc limit 3;
-
--- create table sl_lop.ar5_overlaps_13_11_2016 as (select i.*, st_area(st_transform(i.geo,3035)) from overlapgap_overlap i);
-
-		
-
-
--- pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t overlapgap_overlap sl | psql sl
--- pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t overlapgap_gap sl | psql sl
--- pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t overlapgap_boundery sl | psql sl
-
-
-
-
---create table sl_lop.ar5_holes_utm35_14_11_2016 as (select i.*, st_area(st_transform(i.geo,3035)) from overlapgap_gap i where outside_data_boundery=false);
---grant select on sl_lop.ar5_holes_utm35_14_11_2016 to PUBLIC ;
-
---pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t sl_lop.ar5_holes_utm35_14_11_2016 sl | psql sl
-
---pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t sl_lop.ar5_holes_14_11_2016 sl | psql sl
-
---pg_dump -h db04.ad.skogoglandskap.no -U postgres -c -t sl_lop.ar5_overlap_14_11_2016 sl | psql sl
-
-
- 
-
 
 DROP FUNCTION IF EXISTS find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
@@ -221,7 +181,6 @@ BEGIN
 	--select * from geometry_columns;
 	
 	--Generate command to create grid
-	--'SELECT find_overlap_gap_init('sl_lop.sk_grl_flate','geo',4258,10,'overlapgap_overlap','overlapgap_gap','overlapgap_grid','overlapgap_boundery')";
 	command_string := FORMAT('SELECT find_overlap_gap_init(%s,%s,%s,%s,%s,%s,%s,%s)',
 	quote_literal(table_to_analyze_),
 	quote_literal(geo_collumn_name_),
