@@ -4,6 +4,9 @@
 -- Test that input data are ok
 SELECT '1', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))/10000)::integer from test_data.overlap_gap_input_t1;
 
+SELECT '1 round', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))::numeric,0) from test_data.overlap_gap_input_t1;
+
+
 -- Pipe output sql to a file to execute later - \o /tmp/run_cmd.sql does not work in Travis
 SELECT find_overlap_gap_make_run_cmd('test_data.overlap_gap_input_t1','geom',4258,'test_data.overlap_gap_input_t1_res',50);
 
