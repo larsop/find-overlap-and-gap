@@ -2,9 +2,11 @@
 -- This is test that does a obverlap and gap test on overlap_gap_input_t1.sql
 
 -- Test that input data are ok
-SELECT '1', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))/10000)::integer from test_data.overlap_gap_input_t1;
+SELECT '1 divide 10000', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))/10000)::integer from test_data.overlap_gap_input_t1;
 
-SELECT '1 round', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))::numeric,0) from test_data.overlap_gap_input_t1;
+SELECT '1 transform', count(*), ROUND(sum(st_area(ST_Transform(geom,32633)))::numeric,0) from test_data.overlap_gap_input_t1;
+
+SELECT '1 spheroid-true', count(*), ROUND(sum(st_area(geom,true))::numeric,0) from test_data.overlap_gap_input_t1;
 
 
 -- Pipe output sql to a file to execute later - \o /tmp/run_cmd.sql does not work in Travis
