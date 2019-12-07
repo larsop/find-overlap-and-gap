@@ -39,3 +39,5 @@ DROP FUNCTION cbg_content_based_balanced_grid(
 													max_rows integer); 
 													
 DROP TYPE IF EXISTS find_overlap_gap_single_cell_pameter cascade;
+
+DROP FUNCTION IF EXISTS find_overlap_gap_many_cells_union(command_string_ varchar);

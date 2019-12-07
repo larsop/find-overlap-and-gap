@@ -238,7 +238,7 @@ BEGIN
 
 END;
 $$
-LANGUAGE plpgsql;
+LANGUAGE plpgsql PARALLEL SAFE COST 1;
 
 GRANT EXECUTE on FUNCTION find_overlap_gap_single_cell(
 	table_to_analyze_ varchar, -- The table to analyze 
