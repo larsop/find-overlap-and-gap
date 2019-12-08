@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS execute_parallel(stmts text[]);
+
 /**
  * From Joe Conway <mail@joeconway.com>
  * https://www.postgresql-archive.org/How-to-run-in-parallel-in-Postgres-td6114510.html

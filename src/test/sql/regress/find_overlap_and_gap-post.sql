@@ -40,4 +40,6 @@ DROP FUNCTION cbg_content_based_balanced_grid(
 													
 DROP TYPE IF EXISTS find_overlap_gap_single_cell_pameter cascade;
 
+DROP FUNCTION IF EXISTS execute_parallel(stmts text[]);
+
 drop extension dblink cascade;
