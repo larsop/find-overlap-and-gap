@@ -1,5 +1,6 @@
 1 spheroid-true|428|462600662076
 1 transform 3035|428|462594573055
+CALL
 check overlap table|1783|19348397666
 check gap table|761|880473615091
 check grid table|28|1995881723837

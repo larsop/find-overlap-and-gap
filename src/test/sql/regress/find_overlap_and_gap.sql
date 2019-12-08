@@ -1,3 +1,5 @@
+CREATE EXTENSION dblink; -- needed by  execute_parallel
+
 -- Test 1 -------------
 -- This is test that does a obverlap and gap test on overlap_gap_input_t1.sql
 
@@ -6,7 +8,7 @@ SELECT '1 spheroid-true', count(*), ROUND(sum(st_area(geom,true))::numeric,0) fr
 SELECT '1 transform 3035', count(*), ROUND(sum(st_area(ST_Transform(geom,3035)))::numeric,0) from test_data.overlap_gap_input_t1;
 
 -- Pipe output sql to a file to execute later - \o /tmp/run_cmd.sql does not work in Travis
-SELECT find_overlap_gap_make_run_cmd('test_data.overlap_gap_input_t1','geom',4258,'test_data.overlap_gap_input_t1_res',50);
+CALL find_overlap_gap_make_run_cmd('test_data.overlap_gap_input_t1','geom',4258,'test_data.overlap_gap_input_t1_res',50);
 
 -- Check the result
 SELECT 'check overlap table', count(*) num_overlap, ROUND(sum(st_area(ST_Transform(geom,3035)))::numeric,0) from (SELECT  (ST_dump(geom)).geom as geom, cell_id 
