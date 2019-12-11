@@ -21,6 +21,8 @@ declare
   connstr text;
   rv int;
   new_stmts_started boolean; 
+  all_stmts_done boolean; 
+
   db text := current_database();
 begin
 	
@@ -39,6 +41,7 @@ begin
 		    perform dblink_connect(conn, connstr);
 		    rv := dblink_send_query(conn, stmts[i]);
 		    num_conn_opened = num_conn_opened + 1;
+		    current_stmt_index = current_stmt_index + 1;
 		end loop;
 	EXCEPTION WHEN OTHERS THEN
 	  	
@@ -56,23 +59,27 @@ begin
 	  	-- Enter main loop
 	  	LOOP 
 	  	  new_stmts_started = false;
+	  	  all_stmts_done = true;
 
 		  for i in 1..num_parallel_thread loop
 			conn := 'conn' || i::text;
 		    select dblink_is_busy(conn) into conn_status;
-	
+
 		    if (conn_status = 0) THEN
 			    select val into retv from dblink_get_result(conn) as d(val text);
 			    select val into retv from dblink_get_result(conn) as d(val text);
 			    IF (current_stmt_index < array_length(stmts,1)) THEN
 				    rv := dblink_send_query(conn, stmts[current_stmt_index]);
 					current_stmt_index = current_stmt_index + 1;
+					all_stmts_done = false;
 				END IF;
 				new_stmts_started = true;
+			ELSE
+				all_stmts_done = false;
 		    END IF;
 		  end loop;
 		  RAISE NOTICE 'current_stmt_index =% , array_length= %', current_stmt_index, array_length(stmts,1);
-		  EXIT WHEN current_stmt_index = array_length(stmts,1) ; 
+		  EXIT WHEN current_stmt_index = array_length(stmts,1) AND all_stmts_done = true; 
 		  
 		  -- Do a slepp if nothings happens to reduce CPU load 
 		  IF (new_stmts_started = false) THEN 
@@ -95,5 +102,17 @@ $$ language plpgsql;
 
 GRANT EXECUTE on FUNCTION execute_parallel(stmts text[], num_parallel_thread int) TO public;
 
- 
- 
+\timing 
+
+ DO $$
+   declare
+     stmts text[];
+     i int;
+   begin
+ stmts[1] = 'select pg_sleep(10)';
+ for i in 2..11 loop
+     stmts[i] = 'select pg_sleep(1)';
+end loop;
+   PERFORM execute_parallel(stmts,2);
+   end;
+$$ LANGUAGE plpgsql;
