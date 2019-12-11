@@ -8,11 +8,21 @@ table_name_result_prefix_ varchar, -- This is the prefix used for the result tab
 max_rows_in_each_cell_ int -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
 );
 
+DROP PROCEDURE IF EXISTS find_overlap_gap_make_run_cmd(
+table_to_analyze_ varchar, -- The table to analyze 
+geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
+srid_ int, -- the srid for the given geo column on the table analyze
+table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int, -- this is the max number of paralell jobs to run. There must be at least the same number of free connections
+max_rows_in_each_cell_ int -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
+);
+
 CREATE OR REPLACE PROCEDURE find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
 table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int, -- this is the max number of paralell jobs to run. There must be at least the same number of free connections
 max_rows_in_each_cell_ int DEFAULT 5000 -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
 ) LANGUAGE plpgsql 
 AS $$
@@ -83,7 +93,7 @@ BEGIN
 
 	COMMIT;
 	
-	perform execute_parallel(stmts);
+	perform execute_parallel(stmts,max_parallel_jobs_);
 	
 
 END $$;
@@ -92,6 +102,7 @@ GRANT EXECUTE on PROCEDURE find_overlap_gap_make_run_cmd(table_to_analyze_ varch
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
 table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int,
 max_rows_in_each_cell_ int
 ) TO public;
 

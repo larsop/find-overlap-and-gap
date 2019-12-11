@@ -5,39 +5,148 @@ DROP FUNCTION IF EXISTS execute_parallel(stmts text[]);
  * https://www.postgresql-archive.org/How-to-run-in-parallel-in-Postgres-td6114510.html
  * 
  */
+
+DROP FUNCTION IF EXISTS execute_parallel(stmts text[], num_parallel_thread int);
+
 CREATE OR REPLACE FUNCTION
- execute_parallel(stmts text[])
+ execute_parallel(stmts text[], num_parallel_thread int)
 RETURNS text AS
 $$
 declare
-  i int;
+  i int = 1;
+  y int = 0;
+  num_stmts_executed int = 1;
+  stop_st_stmt_index int = 1;
   retv text;
   conn text;
   connstr text;
   rv int;
   db text := current_database();
 begin
-  for i in 1..array_length(stmts,1) loop
-    conn := 'conn' || i::text;
-    connstr := 'dbname=' || db;
-    perform dblink_connect(conn, connstr);
-    rv := dblink_send_query(conn, stmts[i]);
-  end loop;
-  for i in 1..array_length(stmts,1) loop
-    conn := 'conn' || i::text;
-    select val into retv
-    from dblink_get_result(conn) as d(val text);
-  end loop;
-  for i in 1..array_length(stmts,1) loop
-    conn := 'conn' || i::text;
-    perform dblink_disconnect(conn);
-  end loop;
+	
+  	LOOP 
+  	  stop_st_stmt_index = num_stmts_executed + num_parallel_thread-1;
+  	  
+  	  IF (stop_st_stmt_index > array_length(stmts,1)) THEN
+  	  	stop_st_stmt_index = array_length(stmts,1);
+  	  END IF;
+  	  
+ 	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    connstr := 'dbname=' || db;
+	    perform dblink_connect(conn, connstr);
+	    rv := dblink_send_query(conn, stmts[i]);
+	  end loop;
+	  
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    select val into retv
+	    from dblink_get_result(conn) as d(val text);
+	  end loop;
+
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    y = y + 1;
+	    conn := 'conn' || i::text;
+	    perform dblink_disconnect(conn);
+	  end loop;
+
+	  
+	  RAISE NOTICE 'Done with y=% , array_length= %', y, array_length(stmts,1);
+
+	  num_stmts_executed = num_stmts_executed + num_parallel_thread;
+	  EXIT WHEN stop_st_stmt_index = array_length(stmts,1) ; 
+
+	END LOOP ;
+
   return 'OK';
   end;
 $$ language plpgsql;
 
-GRANT EXECUTE on FUNCTION execute_parallel(stmts text[]) TO public;
+GRANT EXECUTE on FUNCTION execute_parallel(stmts text[], num_parallel_thread int) TO public;
 
+ DROP FUNCTION IF EXISTS execute_parallel(stmts text[]);
+
+/**
+ * From Joe Conway <mail@joeconway.com>
+ * https://www.postgresql-archive.org/How-to-run-in-parallel-in-Postgres-td6114510.html
+ * 
+ */
+
+DROP FUNCTION IF EXISTS execute_parallel(stmts text[], num_parallel_thread int);
+
+CREATE OR REPLACE FUNCTION
+ execute_parallel(stmts text[], num_parallel_thread int)
+RETURNS text AS
+$$
+declare
+  i int = 1;
+  y int = 0;
+  num_stmts_executed int = 1;
+  stop_st_stmt_index int = 1;
+  retv text;
+  conn_status int;
+  conn text;
+  connstr text;
+  rv int;
+  db text := current_database();
+begin
+	
+  	LOOP 
+  	  stop_st_stmt_index = num_stmts_executed + num_parallel_thread-1;
+  	  
+  	  IF (stop_st_stmt_index > array_length(stmts,1)) THEN
+  	  	stop_st_stmt_index = array_length(stmts,1);
+  	  END IF;
+  	  
+ 	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    connstr := 'dbname=' || db;
+	    perform dblink_connect(conn, connstr);
+	    rv := dblink_send_query(conn, stmts[i]);
+	  end loop;
+
+	  
+	  perform pg_sleep(2);
+	  
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    select dblink_is_busy(conn) into conn_status;
+	    RAISE NOTICE 'Connecton is busy % for i=% ', conn_status, i;
+	  end loop;
+	  
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    select val into retv
+	    from dblink_get_result(conn) as d(val text);
+	  end loop;
+
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    conn := 'conn' || i::text;
+	    select dblink_is_busy(conn) into conn_status;
+	    RAISE NOTICE 'Connecton is busy % for i=% ', conn_status, i;
+	  end loop;
+
+	  for i in num_stmts_executed..stop_st_stmt_index loop
+	    y = y + 1;
+	    conn := 'conn' || i::text;
+	    perform dblink_disconnect(conn);
+	  end loop;
+
+	  
+	  RAISE NOTICE 'Done with y=% , array_length= %', y, array_length(stmts,1);
+
+	  num_stmts_executed = num_stmts_executed + num_parallel_thread;
+	  EXIT WHEN stop_st_stmt_index = array_length(stmts,1) ; 
+
+	END LOOP ;
+
+  return 'OK';
+  end;
+$$ language plpgsql;
+
+GRANT EXECUTE on FUNCTION execute_parallel(stmts text[], num_parallel_thread int) TO public;
+
+ 
 -- this is internal helper function
 -- this is a function that creates unlogged tables and the the grid neeed when later checking this table for overlap and gaps. 
  
@@ -189,11 +298,21 @@ table_name_result_prefix_ varchar, -- This is the prefix used for the result tab
 max_rows_in_each_cell_ int -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
 );
 
+DROP PROCEDURE IF EXISTS find_overlap_gap_make_run_cmd(
+table_to_analyze_ varchar, -- The table to analyze 
+geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
+srid_ int, -- the srid for the given geo column on the table analyze
+table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int, -- this is the max number of paralell jobs to run. There must be at least the same number of free connections
+max_rows_in_each_cell_ int -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
+);
+
 CREATE OR REPLACE PROCEDURE find_overlap_gap_make_run_cmd(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
 table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int, -- this is the max number of paralell jobs to run. There must be at least the same number of free connections
 max_rows_in_each_cell_ int DEFAULT 5000 -- this is the max number rows that intersects with box before it's split into 4 new boxes, default is 5000
 ) LANGUAGE plpgsql 
 AS $$
@@ -264,7 +383,7 @@ BEGIN
 
 	COMMIT;
 	
-	perform execute_parallel(stmts);
+	perform execute_parallel(stmts,max_parallel_jobs_);
 	
 
 END $$;
@@ -273,6 +392,7 @@ GRANT EXECUTE on PROCEDURE find_overlap_gap_make_run_cmd(table_to_analyze_ varch
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
 table_name_result_prefix_ varchar, -- This is the prefix used for the result tables
+max_parallel_jobs_ int,
 max_rows_in_each_cell_ int
 ) TO public;
 
