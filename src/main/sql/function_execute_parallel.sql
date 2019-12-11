@@ -101,18 +101,3 @@ begin
 $$ language plpgsql;
 
 GRANT EXECUTE on FUNCTION execute_parallel(stmts text[], num_parallel_thread int) TO public;
-
-\timing 
-
- DO $$
-   declare
-     stmts text[];
-     i int;
-   begin
- stmts[1] = 'select pg_sleep(10)';
- for i in 2..11 loop
-     stmts[i] = 'select pg_sleep(1)';
-end loop;
-   PERFORM execute_parallel(stmts,2);
-   end;
-$$ LANGUAGE plpgsql;
