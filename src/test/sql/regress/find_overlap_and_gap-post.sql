@@ -11,7 +11,7 @@ overlapgap_grid_ varchar, -- The schema.table name of the grid that will be crea
 overlapgap_boundery_ varchar -- The schema.table name the outer boundery of the data found in each cell 
 );
 
-DROP PROCEDURE IF EXISTS find_overlap_gap_make_run_cmd(
+DROP PROCEDURE IF EXISTS find_overlap_gap_run(
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
