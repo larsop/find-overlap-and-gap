@@ -1,16 +1,15 @@
 # What is this function doing ?
 
 This is a generic Postgres function that find all overlaps and gaps for a table. 
-This code now depends on https://www.gnu.org/software/parallel/ to run (This should hva been fixed in Postgres)
-
 
 This function now depend on 
-- dblink
+- dblink (this replaced code from https://www.gnu.org/software/parallel)
 - Postgres 10 or higher
 - https://github.com/larsop/postgres_execute_parallel
 - https://github.com/larsop/content_balanced_grid
 
 The basic idea is that you call this function and with a table name as input and a table name prefix for result tables. The result will then different tables that show overlaps, gaps and the boundary for the input table.  
+
 
 [![Build Status](https://travis-ci.org/larsop/find-overlap-and-gap.svg?branch=master)](https://travis-ci.org/larsop/find-overlap-and-gap)
 
