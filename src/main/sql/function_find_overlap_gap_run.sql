@@ -110,7 +110,7 @@ BEGIN
 
 END $$;
 
-GRANT EXECUTE on PROCEDURE find_overlap_gap_run(table_to_analyze_ varchar, -- The table to analyze 
+GRANT EXECUTE on PROCEDURE find_overlap_gap_run( 
 table_to_analyze_ varchar, -- The table to analyze 
 geo_collumn_name_ varchar, 	-- the name of geometry column on the table to analyze	
 srid_ int, -- the srid for the given geo column on the table analyze
