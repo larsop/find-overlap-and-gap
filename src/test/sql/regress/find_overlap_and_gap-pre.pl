@@ -2,6 +2,30 @@
 use File::Copy;
 use File::Spec::Functions;
 
+
+# if submodules exists use code from them and update find_overlap_and_gap-pre-def.sql or else just use the existing one
+if (-d "../../../../submodule") {
+
+	open($fh_out, ">", 'find_overlap_and_gap-pre-def.sql');
+	
+	# git submodule add --force https://github.com/larsop/content_balanced_grid submodule/content_balanced_grid
+	# get functions for content_balanced_grid
+	for my $file (glob '../../../../submodule/content_balanced_grid/func_grid/func*') {
+		copy_file_into($file,$fh_out);
+	}
+	
+	# git submodule add --force https://github.com/larsop/postgres_execute_parallel submodule/postgres_execute_parallel
+	# get functions for postgres_execute_parallel
+	for my $file (glob '../../../../submodule/postgres_execute_parallel/src/main/sql/func*') {
+		copy_file_into($file,$fh_out);
+	}
+
+	close($fh_out);	 
+
+}
+
+# Get code from this repo which always exits 
+
 $FILE_NAME_PRE='find_overlap_and_gap-pre.sql';
 print "\n Output file is $FILE_NAME_PRE \n";
 
@@ -11,14 +35,6 @@ open($fh_out, ">", $FILE_NAME_PRE);
 for my $file (glob '../../../main/sql/func*') {
 	copy_file_into($file,$fh_out);
 }
-
-# get def for content based grid, TODO find another way to pick up this from https://github.com/larsop/content_balanced_grid
-copy_file_into('find_overlap_gap-pre-cbg-def.sql',$fh_out);
-print "use the find_overlap_gap-pre-cbg-def.sql \n";
-
-# get execute paralell TODO find another way to pick up this from https://github.com/larsop/postgres_execute_parallel
-copy_file_into('find_overlap_gap-pre-execute-par.sql',$fh_out);
-print "use the find_overlap_gap-pre-execute-par.sql \n";
 
 
 copy_file_into('find_overlap_and_gap-pre-def.sql',$fh_out);

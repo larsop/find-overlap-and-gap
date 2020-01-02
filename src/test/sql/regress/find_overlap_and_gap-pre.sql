@@ -486,7 +486,7 @@ BEGIN
 	EXECUTE command_string  INTO num_rows_gap_area;
 	RAISE NOTICE 'Total gaps is % for cell number %(%)', num_rows_gap, this_list_id,num_cells;
  
-	command_string := FORMAT('UPDATE %s 
+	command_string := FORMAT('UPssDATE %s 
 	set ok_exit=true,
 	num_overlap=%s,
 	num_overlap_poly=%s,
