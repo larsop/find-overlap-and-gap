@@ -1,3 +1,4 @@
+
 drop schema test_data cascade;
 
 DROP FUNCTION IF EXISTS find_overlap_gap_init(
@@ -44,3 +45,5 @@ DROP TYPE IF EXISTS find_overlap_gap_single_cell_pameter cascade;
 DROP FUNCTION IF EXISTS execute_parallel(stmts text[], num_parallel_thread int);
 
 drop extension dblink cascade;
+
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[], _num_parallel_thread int,_close_open_conn boolean,_user_connstr text, _contiune_after_stat_exception boolean);

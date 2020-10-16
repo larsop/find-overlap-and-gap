@@ -182,10 +182,14 @@ DECLARE
 	id_list_tmp int[];
 	this_list_id int;
 	
+	-- Holds the list of func_call to run
 	stmts text[];
 
+	-- Holds the sql for a functin to call
 	func_call text;
 	
+	-- Holds the reseult from paralell calls
+	call_result int;
 	
 	-- the number of cells created in the grid
 	num_cells int;
@@ -194,8 +198,7 @@ DECLARE
 	overlapgap_gap varchar = table_name_result_prefix_ || '_gap'; -- The schema.table name for the gaps/holes found in each cell 
 	overlapgap_grid varchar  = table_name_result_prefix_ || '_grid'; -- The schema.table name of the grid that will be created and used to break data up in to managle pieces
 	overlapgap_boundery varchar = table_name_result_prefix_ || '_boundery'; -- The schema.table name the outer boundery of the data found in each cell 
-	
-	call_result boolean;
+
 
 BEGIN
 
@@ -245,7 +248,7 @@ BEGIN
 	
 	select execute_parallel(stmts,max_parallel_jobs_) into call_result;
 	
-	IF (call_result = false) THEN 
+	IF (call_result = 0) THEN 
 		RAISE EXCEPTION 'Failed to run overlap and gap for % with the following statement list %', table_to_analyze_, stmts;
 	END IF;
 	
@@ -804,125 +807,232 @@ GRANT EXECUTE ON FUNCTION cbg_content_based_balanced_grid (table_name_column_nam
  * Based on code from Joe Conway <mail@joeconway.com>
  * https://www.postgresql-archive.org/How-to-run-in-parallel-in-Postgres-td6114510.html
  * 
+ * Execute a set off stmts in parallel  
+ * 
  */
 
-DROP FUNCTION IF EXISTS execute_parallel(stmts text[]);
-DROP FUNCTION IF EXISTS execute_parallel(stmts text[], num_parallel_thread int);
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[]);
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[], _num_parallel_thread int);
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[], _num_parallel_thread int,_user_connstr text);
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[], _num_parallel_thread int,_close_open_conn boolean,_user_connstr text);
+DROP FUNCTION IF EXISTS execute_parallel(_stmts text[], _num_parallel_thread int,_close_open_conn boolean,_user_connstr text, _contiune_after_stat_exception boolean);
 
--- TODO add test return value
--- TODO catch error on main loop to be sure connenctinos are closed
 
-CREATE OR REPLACE FUNCTION execute_parallel(stmts text[], num_parallel_thread int DEFAULT 3)
-RETURNS boolean AS
+CREATE OR REPLACE FUNCTION execute_parallel(
+_stmts text[], -- The list of statements to run
+_num_parallel_thread int DEFAULT 3, -- number threads/connections to use
+_close_open_conn boolean DEFAULT false, -- always close connection before and open before sending next statement
+_user_connstr text DEFAULT NULL, -- check https://www.postgresql.org/docs/11/contrib-dblink-connect.html
+_contiune_after_stat_exception boolean DEFAULT true -- If true, will contiunue to run even if one the statements fails
+)
+RETURNS int AS
 $$
 declare
   i int = 1;
   current_stmt_index int = 1;
   current_stmt_sent int = 0;
-  num_stmts_executed int = 1;
+  new_stmt text;
+  old_stmt text;
+  num_stmts_executed int = 0;
   num_stmts_failed int = 0;
   num_conn_opened int = 0;
+  num_conn_notify int = 0;
   retv text;
   retvnull text;
   conn_status int;
-  conn text;
+  conntions_array text[];
+  conn_stmts text[];
   connstr text;
   rv int;
   new_stmts_started boolean; 
-  all_stmts_done boolean; 
+  v_state text;
+  v_msg text;
+  v_detail text;
+  v_hint text;
+  v_context text;
+  
 
   db text := current_database();
+  db_port text;
+  
+  raise_error text;
+  raise_error_temp text;
+
 begin
 	
-	-- Check if num parallel theads if bugger than num stmts
-	IF (num_parallel_thread > array_length(stmts,1)) THEN
-  	  	num_parallel_thread = array_length(stmts,1);
+	IF (Array_length(_stmts, 1) IS NULL OR _stmts IS NULL) THEN
+       RAISE NOTICE 'No statements to execute';
+       RETURN TRUE;
+    ELSE
+       RAISE NOTICE '% statements to execute in % threads', Array_length(_stmts, 1), _num_parallel_thread;
+    END IF;
+    
+	-- Check if num parallel theads if bugger than num _stmts
+	IF (_num_parallel_thread > array_length(_stmts,1)) THEN
+  	  	_num_parallel_thread = array_length(_stmts,1);
   	END IF;
 
   	
-  	-- Open connections for num_parallel_thread
-	-- and send off the first batch of jobs
-	BEGIN
-	  	for i in 1..num_parallel_thread loop
-		    conn := 'conn' || i::text;
-		    connstr := 'dbname=' || db;
-		    perform dblink_connect(conn, connstr);
-		    num_conn_opened = num_conn_opened + 1;
-		end loop;
-	EXCEPTION WHEN OTHERS THEN
-	  	
-	  	RAISE NOTICE 'Failed to open all requested onnections % , reduce to  %', num_parallel_thread, num_conn_opened;
-	  	
-		-- Check if num parallel theads if bugger than num stmts
-		IF (num_conn_opened < num_parallel_thread) THEN
-	  	  	num_parallel_thread = num_conn_opened;
-	  	END IF;
+    IF _user_connstr IS NULL THEN
 
-	END;
+      SELECT setting
+        INTO db_port
+        FROM pg_catalog.pg_settings
+        WHERE name = 'port';
+
+      IF db_port IS NOT NULL THEN
+        connstr := 'dbname=' || db || ' port=' || db_port;
+      ELSE 
+        connstr := 'dbname=' || db;
+      END IF;
+    ELSE
+      --connstr := 'dbname=' || db || ' port=5432';
+      connstr := _user_connstr;
+    END IF;
+ 	
+    RAISE NOTICE '% statements to execute in % threads using %', Array_length(_stmts, 1), _num_parallel_thread, connstr;
+	
+  	
+  -- Open connections for _num_parallel_thread
+  BEGIN
+    for i in 1.._num_parallel_thread loop
+      conntions_array[i] := 'conn' || i::text;
+      perform dblink_connect(conntions_array[i], connstr);
+      num_conn_opened := num_conn_opened + 1;
+      conn_stmts[i] := null;
+    end loop;
+  EXCEPTION WHEN OTHERS THEN
+
+    GET STACKED DIAGNOSTICS
+      v_state = RETURNED_SQLSTATE, v_msg = MESSAGE_TEXT,
+      v_detail = PG_EXCEPTION_DETAIL, v_hint = PG_EXCEPTION_HINT,
+      v_context = PG_EXCEPTION_CONTEXT;
+
+    IF num_conn_opened = 0 THEN
+      RAISE EXCEPTION 'Failed to open any connection: % - detail: % - hint: % - context: %',
+        v_msg, v_detail, v_hint, v_context;
+    END IF;
+
+    RAISE WARNING 'Failed to open all requested connections % , reduce to  % state  : %  message: % detail : % hint   : % context: %', 
+      _num_parallel_thread, num_conn_opened, v_state, v_msg, v_detail, v_hint, v_context;
+
+    -- Check if num parallel theads if bugger than num _stmts
+    IF (num_conn_opened < _num_parallel_thread) THEN
+      _num_parallel_thread = num_conn_opened;
+    END IF;
+
+  END;
 
 
 	IF (num_conn_opened > 0) THEN
 	  	-- Enter main loop
 	  	LOOP 
 	  	  new_stmts_started = false;
-	  	  all_stmts_done = true;
-
-		  for i in 1..num_parallel_thread loop
-			conn := 'conn' || i::text;
-		    select dblink_is_busy(conn) into conn_status;
-
-		    if (conn_status = 0) THEN
+	  
+		 -- check if connections are not used
+		 raise_error_temp = null;
+		 FOR i IN 1.._num_parallel_thread loop
+		    IF (conn_stmts[i] is not null) THEN 
+		      --select count(*) from dblink_get_notify(conntions_array[i]) into num_conn_notify;
+		      --IF (num_conn_notify is not null and num_conn_notify > 0) THEN
+		      SELECT dblink_is_busy(conntions_array[i]) into conn_status;
+		      IF (conn_status = 0) THEN
+		        old_stmt := conn_stmts[i];
+			    conn_stmts[i] := null;
+			    num_stmts_executed := num_stmts_executed + 1;
 		    	BEGIN
-				    select val into retv from dblink_get_result(conn) as d(val text);
-			  		--RAISE NOTICE 'current_stmt_index =% , val1 status= %', current_stmt_index, retv;
-				    -- Two times to reuse connecton according to doc.
-				    select val into retvnull from dblink_get_result(conn) as d(val text);
-			  		--RAISE NOTICE 'current_stmt_index =% , val2 status= %', current_stmt_index, retv;
-				EXCEPTION WHEN OTHERS THEN
-					RAISE NOTICE 'Got an error for conn %  retv %', conn, retv;
-					num_stmts_failed = num_stmts_failed + 1;
-				END;
-			    IF (current_stmt_index <= array_length(stmts,1)) THEN
-			   		RAISE NOTICE 'Call stmt %  on connection  %', stmts[current_stmt_index], conn;
-				    rv := dblink_send_query(conn, stmts[current_stmt_index]);
-					current_stmt_index = current_stmt_index + 1;
-					all_stmts_done = false;
-					new_stmts_started = true;
-				END IF;
-			ELSE
-				all_stmts_done = false;
-		    END IF;
 
+			    	LOOP 
+			    	  select val into retv from dblink_get_result(conntions_array[i]) as d(val text);
+			    	  EXIT WHEN retv is null;
+			    	END LOOP ;
+
+				EXCEPTION WHEN OTHERS THEN
+				    GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE, v_msg = MESSAGE_TEXT, v_detail = PG_EXCEPTION_DETAIL, v_hint = PG_EXCEPTION_HINT,
+                    v_context = PG_EXCEPTION_CONTEXT;
+                    RAISE NOTICE 'Failed get value for stmt: % , using conn %, state  : % message: % detail : % hint : % context: %', 
+                    old_stmt, conntions_array[i], v_state, v_msg, v_detail, v_hint, v_context;
+					num_stmts_failed := num_stmts_failed + 1;
+		   	 	    perform dblink_disconnect(conntions_array[i]);
+		            perform dblink_connect(conntions_array[i], connstr);
+		            raise_error_temp = Format('Failed get value for stmt: %L , using conn %L, state  : %L message: %L detail : %L hint : %L context: %L', 
+                    old_stmt, conntions_array[i], v_state, v_msg, v_detail, v_hint, v_context);
+                    IF raise_error IS NULL THEN
+                      raise_error = raise_error_temp;
+                    ELSE
+                      raise_error = raise_error||';;;;;'||raise_error_temp;
+                    END IF;
+				END;
+		      END IF;
+		    END IF;
+	        IF conn_stmts[i] is null AND current_stmt_index <= array_length(_stmts,1) THEN
+	            -- start next job
+	            -- TODO remove duplicate job
+		        new_stmt := _stmts[current_stmt_index];
+		        conn_stmts[i] :=  new_stmt;
+		   		RAISE NOTICE 'New stmt (%) on connection %', new_stmt, conntions_array[i];
+		   		-- Handle null value in statement list
+		   		IF new_stmt is not NULL THEN
+	    	    BEGIN
+		    	  IF _close_open_conn=true THEN
+		   	 	    perform dblink_disconnect(conntions_array[i]);
+		            perform dblink_connect(conntions_array[i], connstr);
+		    	  END IF;
+			      --rv := dblink_send_query(conntions_array[i],'BEGIN; '||new_stmt|| '; COMMIT;');
+			      rv := dblink_send_query(conntions_array[i],new_stmt);
+			      new_stmts_started = true;
+			      EXCEPTION WHEN OTHERS THEN
+			        GET STACKED DIAGNOSTICS v_state = RETURNED_SQLSTATE, v_msg = MESSAGE_TEXT, v_detail = PG_EXCEPTION_DETAIL, v_hint = PG_EXCEPTION_HINT,
+                    v_context = PG_EXCEPTION_CONTEXT;
+                    RAISE NOTICE 'Failed to send stmt: %s , using conn %, state  : % message: % detail : % hint : % context: %', conn_stmts[i], conntions_array[i], v_state, v_msg, v_detail, v_hint, v_context;
+				    num_stmts_failed := num_stmts_failed + 1;
+		   	 	    perform dblink_disconnect(conntions_array[i]);
+		            perform dblink_connect(conntions_array[i], connstr);
+			      END;
+			    ELSE
+			      num_stmts_executed := num_stmts_executed + 1;
+			    END IF;
+				current_stmt_index = current_stmt_index + 1;
+			END IF;
 		    
-		  end loop;
--- 		  RAISE NOTICE 'current_stmt_index =% , array_length= %', current_stmt_index, array_length(stmts,1);
-		  EXIT WHEN (current_stmt_index - 1) = array_length(stmts,1) AND all_stmts_done = true AND new_stmts_started = false; 
+		  END loop;
+		  
+		  EXIT WHEN num_stmts_executed = Array_length(_stmts, 1) OR 
+		  (_contiune_after_stat_exception = false AND raise_error_temp is not null); 
+		  
+		  
 		  
 		  -- Do a slepp if nothings happens to reduce CPU load 
 		  IF (new_stmts_started = false) THEN 
-		  	RAISE NOTICE 'sleep at current_stmt_index =% , array_length= %', current_stmt_index, array_length(stmts,1);
-		  	perform pg_sleep(1);
+		  	--RAISE NOTICE 'Do sleep at num_stmts_executed %s current_stmt_index =% , array_length= %, new_stmts_started = %', 
+		  	--num_stmts_executed,current_stmt_index, array_length(_stmts,1), new_stmts_started;
+			perform pg_sleep(0.0001);
 		  END IF;
 		END LOOP ;
 	
-		-- cose connections for num_parallel_thread
-	  	for i in 1..num_parallel_thread loop
-		    conn := 'conn' || i::text;
-		    perform dblink_disconnect(conn);
+		-- cose connections for _num_parallel_thread
+	  	for i in 1.._num_parallel_thread loop
+		    perform dblink_disconnect(conntions_array[i]);
 		end loop;
   END IF;
 
+  RAISE NOTICE '% statements to execute in % threads, done with % , failed num %', 
+  Array_length(_stmts, 1), _num_parallel_thread, (current_stmt_index -1), num_stmts_failed;
 
-  IF num_stmts_failed = 0 AND (current_stmt_index -1)= array_length(stmts,1) THEN
-  	return true;
+  		            
+
+  IF num_stmts_failed = 0 AND (current_stmt_index -1)= array_length(_stmts,1) THEN
+  	return (current_stmt_index -1);
   else
-  	return false;
+  	IF raise_error is not null THEN
+  	  RAISE EXCEPTION 'Num ok stats % raise_error %', (current_stmt_index -1)-num_stmts_failed, raise_error USING HINT = 'An error happend in one the statemnet, please chem them ';
+  	END IF;  
   END IF;
   
 END;
 $$ language plpgsql;
 
-GRANT EXECUTE on FUNCTION execute_parallel(stmts text[], num_parallel_thread int) TO public;
+GRANT EXECUTE on FUNCTION execute_parallel(_stmts text[], _num_parallel_thread int,_close_open_conn boolean,_user_connstr text, _contiune_after_stat_exception boolean) TO public;
 
 
 CREATE SCHEMA test_data;

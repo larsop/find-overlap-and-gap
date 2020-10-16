@@ -40,10 +40,14 @@ DECLARE
 	id_list_tmp int[];
 	this_list_id int;
 	
+	-- Holds the list of func_call to run
 	stmts text[];
 
+	-- Holds the sql for a functin to call
 	func_call text;
 	
+	-- Holds the reseult from paralell calls
+	call_result int;
 	
 	-- the number of cells created in the grid
 	num_cells int;
@@ -52,8 +56,7 @@ DECLARE
 	overlapgap_gap varchar = table_name_result_prefix_ || '_gap'; -- The schema.table name for the gaps/holes found in each cell 
 	overlapgap_grid varchar  = table_name_result_prefix_ || '_grid'; -- The schema.table name of the grid that will be created and used to break data up in to managle pieces
 	overlapgap_boundery varchar = table_name_result_prefix_ || '_boundery'; -- The schema.table name the outer boundery of the data found in each cell 
-	
-	call_result boolean;
+
 
 BEGIN
 
@@ -103,7 +106,7 @@ BEGIN
 	
 	select execute_parallel(stmts,max_parallel_jobs_) into call_result;
 	
-	IF (call_result = false) THEN 
+	IF (call_result = 0) THEN 
 		RAISE EXCEPTION 'Failed to run overlap and gap for % with the following statement list %', table_to_analyze_, stmts;
 	END IF;
 	
