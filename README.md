@@ -40,7 +40,7 @@ real	0m28.139s
 
 with 2 parallel threads (sl_lop.overlap_gap_input_t1 is very small)
 <pre><code>
-time psql sl  -c"CALL find_overlap_gap_run('sl_lop.overlap_gap_input_t1','geom',4258,'sl_lop.overlap_gap_input_t1_res',1,50)" 2>> /tmp/analyze.log;
+time psql sl  -c"CALL find_overlap_gap_run('sl_lop.overlap_gap_input_t1','geom',4258,'sl_lop.overlap_gap_input_t1_res',2,50)" 2>> /tmp/analyze.log;
 real	0m14.124s
 </pre></code>
 
