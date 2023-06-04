@@ -8,7 +8,7 @@ use File::Path;
 use Cwd 'abs_path';
 use Getopt::Long;
 use strict;
-
+use lib '.';
 
 ##################################################################
 # Usage ./run_test.pl <testname> [<testname>]
