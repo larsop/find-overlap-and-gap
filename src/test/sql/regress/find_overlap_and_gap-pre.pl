@@ -39,6 +39,7 @@ for my $file (glob '../../../main/sql/func*') {
 
 copy_file_into('find_overlap_and_gap-pre-def.sql',$fh_out);
 copy_file_into('overlap_gap_input_t1.sql',$fh_out);
+copy_file_into('overlap_gap_input_t2.sql',$fh_out);
 
 
 close($fh_out);	 

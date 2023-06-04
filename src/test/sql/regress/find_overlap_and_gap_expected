@@ -5,3 +5,10 @@ check overlap table|1890|20523723055
 check gap table|765|880473615091
 check grid table|28|1995881723837
 check boundery table|70|452276031212
+1 spheroid-true|2|117210937
+1 transform 3035|2|117210927
+CALL
+check overlap table|0|
+check gap table|35|330357785
+check grid table|1|447022467
+check boundery table|1|116689475
