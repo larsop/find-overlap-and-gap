@@ -112,8 +112,8 @@ BEGIN
 		overlapgap_cell_data a2
 		WHERE 
 		a1.%s && a2.%s AND
-		ST_Overlaps(a1.%s,a2.%s) AND
-		NOT ST_Equals(a1.%s,a2.%s)
+		ST_Intersects(a1.%s,a2.%s) AND
+		a1.id != a2.id
 	) as r WHERE ST_area(%s) > 0',
 	overlapgap_overlap,
 	geo_collumn_name_,
