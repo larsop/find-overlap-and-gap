@@ -51,21 +51,20 @@ BEGIN
 	-- create a content based grid
 	EXECUTE FORMAT('CREATE TABLE %s( id serial, %s geometry(Geometry,%s))',overlapgap_grid_,geo_collumn_name_,srid_);
 	
-	command_string := FORMAT('INSERT INTO %s(%s) 
-	SELECT q_grid.cell::geometry(geometry,%s)  as %s 
-	FROM (
-	SELECT(ST_Dump(
-	cbg_content_based_balanced_grid(ARRAY[ %s],%s))
-	).geom AS cell) AS q_grid',
-	overlapgap_grid_,
-	geo_collumn_name_,
-	srid_,
-	geo_collumn_name_,
-	quote_literal(table_to_analyze_ || ' ' || geo_collumn_on_test_table_)::text,
-	max_rows_in_each_cell
-	);
-	-- display
-	RAISE NOTICE 'command_string %.', command_string;
+	
+	command_string := Format('INSERT INTO %1$s(%5$s)
+ 	SELECT ST_transform(q_grid.cell,%2$s)::Geometry(geometry,%2$s) as %5$s
+ 	from (
+ 	select(st_dump(
+ 	cbg_content_based_balanced_grid(%3$L,%4$s))
+ 	).geom as cell) as q_grid ', 
+ 	overlapgap_grid_, --01
+ 	srid_,  -- 02
+ 	ARRAY[table_to_analyze_ || ' ' || geo_collumn_on_test_table_::text], --03
+ 	max_rows_in_each_cell, --04
+ 	geo_collumn_name_ --05
+ 	);
+  
 	-- execute the sql command
 	EXECUTE command_string;
 
